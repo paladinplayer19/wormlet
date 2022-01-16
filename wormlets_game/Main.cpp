@@ -16,6 +16,10 @@ int main()
 	floorTexture.loadFromFile("Assets/Graphics/tile.png");
 	floorTexture.setRepeated(true);
 
+	// Load popup texture
+	sf::Texture popupTexture;
+	popupTexture.loadFromFile("Assets/Graphics/tile.png");
+
 	// Set player Sprite
 	sf::Sprite playerSpr;
 	playerSpr.setTexture(playerTexture);
@@ -27,6 +31,21 @@ int main()
 	floorSpr.setTextureRect(sf::IntRect(window.getSize().x / 2, 0, window.getSize().x / 2, floorTexture.getSize().y));
 	sf::FloatRect floorAABB = sf::FloatRect();
     sf::Vector2f floorSize = sf::Vector2f();
+
+	// Setup popup 
+	sf::Sprite popupSpr;
+	popupSpr.setTexture(popupTexture);
+	popupSpr.setScale(5,5);
+	popupSpr.setOrigin(popupTexture.getSize().x / 2, popupTexture.getSize().y / 2);
+	sf::Vector2f popupPos = sf::Vector2f(window.getSize().x / 2, window.getSize().y);
+	float showTimePassed = 0.0f;
+	const float duration = 1.0f;
+	sf::Vector2f offScreenPos = sf::Vector2f(popupPos);
+	sf::Vector2f onScreenPos = sf::Vector2f(window.getSize().x / 2, window.getSize().y / 2);
+	sf::Vector2f change = sf::Vector2f();
+	bool isPlaying = false;
+
+	//window.getSize().x / 2, window.getSize().y + popupSpr.getGlobalBounds().height
 
 	
 	//Player Movement
@@ -55,7 +74,8 @@ int main()
 	sf::Vector2f floorCollisionOffset = sf::Vector2f(1,1);
 
 	//Game Clock
-		sf::Clock clock;
+	sf::Clock clock;
+
 	while (window.isOpen())
 	{
 		// Clock setup
@@ -220,7 +240,7 @@ int main()
 			deltaVel.y = playerAcc.y * deltaTime;
 			playerVel.y = playerVel.y + deltaVel.y;
 
-			playerVel.y = playerVel.y - playerVel.y * drag_y;
+			playerVel.y = playerVel.y - playerVel.y * drag_y;	
 
 			deltaPos.y = playerVel.y * deltaTime;
 			playerPos.y = playerPos.y + deltaPos.y;
@@ -239,11 +259,53 @@ int main()
 		deltaPos.x = playerVel.x * deltaTime;
 		playerPos.x = playerPos.x + deltaPos.x;
 
+
 		
-		
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter))
+		{
+			 isPlaying = true;
+		}
+
+		if (isPlaying) {
+			showTimePassed += deltaTime;
+
+			change = onScreenPos - offScreenPos;
+
+			if (showTimePassed >= duration)
+			{
+				popupPos = offScreenPos + change;
+			}
+			else
+			{
+
+				sf::Vector2f k1 = change / duration * duration;
+
+
+				sf::Vector2f k2 = sf::Vector2f(0.0f, 0.0f);
+
+
+				sf::Vector2f k3 = offScreenPos;
+
+				popupPos = k1 * showTimePassed * showTimePassed + k2 * showTimePassed + k3;
+			}
+		}
+
+
+
+
+
+
+
+
+
+
+
+
+
 		// Sets positions for both player and floor
 		floorSpr.setPosition(floorPos);
 		playerSpr.setPosition(playerPos);
+		popupSpr.setPosition(popupPos);
 
 		// Clears
 		window.clear();
@@ -251,6 +313,7 @@ int main()
 		// Draws
 		window.draw(floorSpr);
 		window.draw(playerSpr);
+		window.draw(popupSpr);
 		
 		
 		// Displays
