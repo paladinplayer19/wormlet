@@ -321,6 +321,8 @@ int main()
 		playerSpr.setPosition(playerPos);
 		popupSpr.setPosition(popupPos);
 
+		// Practical Task 3 - Gravity Prediction
+
 		sf::Vector2f mousPos = sf::Vector2f(sf::Mouse::getPosition(window));
 		firingDir = mousPos - playerPos;
 		float mag = sqrt(firingDir.x * firingDir.x + firingDir.y * firingDir.y);
@@ -342,6 +344,7 @@ int main()
 			pipPos = (pipGrav * (pipTime * pipTime) / 2.0f + firingVel * pipTime + firingPos);
 			pipSprites[i].setPosition(pipPos);
 		}
+		
 		// Clears
 		window.clear();
 		
