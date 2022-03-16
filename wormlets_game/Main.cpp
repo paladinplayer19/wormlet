@@ -1,5 +1,6 @@
 #include <SFML/Graphics.hpp>
 #include <math.h>
+#include <vector>
 
 int main()
 {
@@ -47,7 +48,29 @@ int main()
 
 	//window.getSize().x / 2, window.getSize().y + popupSpr.getGlobalBounds().height
 
+	// Setup Pips
+	sf::Sprite pipSpr;
+	sf::Texture pipTexture;
+
+	pipTexture.loadFromFile("Assets/Graphics/pip.png");
+	pipSpr.setTexture(pipTexture);
+	std::vector<sf::Sprite> pipSprites;
+	int pipNumb = 10;
+	sf::Vector2f pipPos = sf::Vector2f();
+
+	//
+	sf::Vector2f pipGrav = sf::Vector2f(0, 1000.0f);
+	sf::Vector2f firingPos = sf::Vector2f();
+	sf::Vector2f firingDir = sf::Vector2f(1.0f, 0.0f);
+	float firingSpd = 750.0f;
+	//
+	for (int i = 0; i < pipNumb; ++i)
+	{
+		pipSprites.push_back(pipSpr);
+	}
+
 	
+
 	//Player Movement
 	sf::FloatRect playerAABB = sf::FloatRect();
 	sf::Vector2f playerSize = sf::Vector2f();
@@ -261,6 +284,8 @@ int main()
 
 
 		
+
+		
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter))
 		{
 			 isPlaying = true;
@@ -291,22 +316,32 @@ int main()
 		}
 
 
-
-
-
-
-
-
-
-
-
-
-
 		// Sets positions for both player and floor
 		floorSpr.setPosition(floorPos);
 		playerSpr.setPosition(playerPos);
 		popupSpr.setPosition(popupPos);
 
+		sf::Vector2f mousPos = sf::Vector2f(sf::Mouse::getPosition(window));
+		firingDir = mousPos - playerPos;
+		float mag = sqrt(firingDir.x * firingDir.x + firingDir.y * firingDir.y);
+		firingDir.x = firingDir.x / mag;
+		firingDir.y = firingDir.y / mag;
+
+		sf::Vector2f firingVel = firingDir * firingSpd;
+		firingPos = playerPos;
+		
+		
+		
+		
+		
+		float pipTime = 0;
+		for (int i = 0; i < pipSprites.size(); ++i)
+		{
+			
+			pipTime += 0.1f;
+			pipPos = (pipGrav * (pipTime * pipTime) / 2.0f + firingVel * pipTime + firingPos);
+			pipSprites[i].setPosition(pipPos);
+		}
 		// Clears
 		window.clear();
 		
@@ -314,6 +349,12 @@ int main()
 		window.draw(floorSpr);
 		window.draw(playerSpr);
 		window.draw(popupSpr);
+		
+
+		for (int i = 0; i < pipSprites.size(); ++i) {
+
+			window.draw(pipSprites[i]);
+		}
 		
 		
 		// Displays
