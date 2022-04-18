@@ -78,6 +78,8 @@ int main()
 	sf::Vector2f playerAcc = sf::Vector2f(0.0f, 0.0f);
 	sf::Vector2f currentPos = sf::Vector2f(0.0f, 0.0f);
 	sf::Vector2f prevPos = sf::Vector2f(0.0f, 0.0f);
+	sf::Vector2f prevVel = sf::Vector2f(0.0f, 0.0f);
+	sf::Vector2f prevAcc = sf::Vector2f(0.0f, 0.0f);
 	sf::Vector2f jumpHeight = sf::Vector2f(0.0f, 300.0f);
 	sf::Vector2f floorPos = sf::Vector2f(0, window.getSize().y / 2);
 	sf::Vector2f playerPos = sf::Vector2f(window.getSize().x / 2, floorPos.y - floorAABB.height);
@@ -101,6 +103,10 @@ int main()
 
 	while (window.isOpen())
 	{
+		prevPos = playerPos;
+		prevVel = playerVel;
+		prevAcc = playerAcc;
+
 		// Clock setup
 		sf::Time frameTime = clock.restart();
 		float deltaTime = frameTime.asSeconds();
@@ -130,6 +136,7 @@ int main()
 				}
 			}
 		}
+
 
 		// Applies drag
 		playerAcc.x = 0;
@@ -258,29 +265,97 @@ int main()
 		    playerAcc.y += gravity;
 				
 
-			// Y
-			// Applies movement on the y axis (aka jumping)
-			deltaVel.y = playerAcc.y * deltaTime;
-			playerVel.y = playerVel.y + deltaVel.y;
 
-			playerVel.y = playerVel.y - playerVel.y * drag_y;	
+			//////////////////////////////// Practical Task 4 - Physics Alternatives //////////////////////////////////////////////////
 
-			deltaPos.y = playerVel.y * deltaTime;
-			playerPos.y = playerPos.y + deltaPos.y;
+			const int EXPLICIT_EULER = 1;
+			const int IMPLICIT_EULER = 2;
+			const int VELOCITY_VERLET = 3;
+
+			// Change Calculation mode by using the above variable names
+
+			const int MODE = VELOCITY_VERLET;
+
+			switch (MODE)
+			{
+			case EXPLICIT_EULER:
+				
+				// Applies movement on the y axis (aka jumping)
+				deltaVel.y = prevAcc.y * deltaTime;
+				playerVel.y = playerVel.y + deltaVel.y;
+
+				playerVel.y = playerVel.y - playerVel.y * drag_y;
+
+				deltaPos.y = prevVel.y * deltaTime;
+				playerPos.y = playerPos.y + deltaPos.y;
+
+		       // Applies movement on the x axis (Moving left and right)
+				deltaVel.x = prevAcc.x * deltaTime;
+				playerVel.x = playerVel.x + deltaVel.x;
+
+				playerVel.x = playerVel.x - playerVel.x * drag_x;
+
+				deltaPos.x = prevVel.x * deltaTime;
+				playerPos.x = playerPos.x + deltaPos.x;
+
+				break;
+
+			case IMPLICIT_EULER:
+
+				// Applies movement on the y axis (aka jumping)
+				deltaVel.y = playerAcc.y * deltaTime;
+				playerVel.y = playerVel.y + deltaVel.y;
+
+				playerVel.y = playerVel.y - playerVel.y * drag_y;
+
+				deltaPos.y = playerVel.y * deltaTime;
+				playerPos.y = playerPos.y + deltaPos.y;
+
+				// Applies movement on the x axis (Moving left and right)
+				deltaVel.x = playerAcc.x * deltaTime;
+				playerVel.x = playerVel.x + deltaVel.x;
+
+				playerVel.x = playerVel.x - playerVel.x * drag_x;
+
+				deltaPos.x = playerVel.x * deltaTime;
+				playerPos.x = playerPos.x + deltaPos.x;
+
+				break;
+
 			
+			case VELOCITY_VERLET:
+			{
+				sf::Vector2f firstHalfVel = prevVel + prevAcc * (deltaTime * 0.5f);
+				// Applies movement on the y axis (aka jumping)
+				deltaPos.y = firstHalfVel.y * deltaTime;
+				playerPos.y = playerPos.y + deltaPos.y;
 
-			
+				deltaVel.y = playerAcc.y * (deltaTime * 0.5f);
+				playerVel.y = firstHalfVel.y + deltaVel.y;
+
+				playerVel.y = playerVel.y - playerVel.y * drag_y;
+
+
+				// Applies movement on the x axis (Moving left and right)
+				deltaPos.x = firstHalfVel.x * deltaTime;
+				playerPos.x = playerPos.x + deltaPos.x;
+
+				deltaVel.x = playerAcc.x * (deltaTime * 0.5f);
+				playerVel.x = firstHalfVel.x + deltaVel.x;
+
+				playerVel.x = playerVel.x - playerVel.x * drag_x;
+
+			}
+				break;
+
+			default:
+
+				break;
+			}
+
+
 		
-
-		// X
-		// Applies movement on the x axis (Moving left and right)
-		deltaVel.x = playerAcc.x * deltaTime;
-		playerVel.x = playerVel.x + deltaVel.x;
-
-		playerVel.x = playerVel.x - playerVel.x * drag_x;
-			
-		deltaPos.x = playerVel.x * deltaTime;
-		playerPos.x = playerPos.x + deltaPos.x;
+		
 
 
 		
