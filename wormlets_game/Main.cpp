@@ -1,6 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <math.h>
 #include <vector>
+#include "VectorHelper.h"
 
 int main()
 {
@@ -59,7 +60,7 @@ int main()
 	sf::Vector2f pipPos = sf::Vector2f();
 
 	//
-	sf::Vector2f pipGrav = sf::Vector2f(0, 1000.0f);
+	sf::Vector2f gravity = sf::Vector2f(0, 1000.0f);
 	sf::Vector2f firingPos = sf::Vector2f();
 	sf::Vector2f firingDir = sf::Vector2f(1.0f, 0.0f);
 	float firingSpd = 750.0f;
@@ -69,7 +70,12 @@ int main()
 		pipSprites.push_back(pipSpr);
 	}
 
-	
+	// Grenade 
+	sf::Texture grenadeTexture;
+	grenadeTexture.loadFromFile("Assets/Graphics/bullet.png");
+	sf::Sprite grenadeSpr;
+	grenadeSpr.setTexture(grenadeTexture);
+	sf::Vector2f grenadeVel(0.0f, 0.0f);
 
 	//Player Movement
 	sf::FloatRect playerAABB = sf::FloatRect();
@@ -84,7 +90,7 @@ int main()
 	sf::Vector2f floorPos = sf::Vector2f(0, window.getSize().y / 2);
 	sf::Vector2f playerPos = sf::Vector2f(window.getSize().x / 2, floorPos.y - floorAABB.height);
 	sf::Vector2f distance = sf::Vector2f(0.0f, 0.0f);
-	float gravity = 10.0f;
+	
 	float accRate_x = 10000.0f;
 	float accRate_y = 11550.0f;
 	float drag_x = 0.009f;
@@ -262,8 +268,8 @@ int main()
 		
 					
 			// Applies gravity each frame 
-		    playerAcc.y += gravity;
-				
+		     playerAcc.y = gravity.y; 
+			
 
 
 			//////////////////////////////// Practical Task 4 - Physics Alternatives //////////////////////////////////////////////////
@@ -400,26 +406,75 @@ int main()
 
 		sf::Vector2f mousPos = sf::Vector2f(sf::Mouse::getPosition(window));
 		firingDir = mousPos - playerPos;
-		float mag = sqrt(firingDir.x * firingDir.x + firingDir.y * firingDir.y);
-		firingDir.x = firingDir.x / mag;
-		firingDir.y = firingDir.y / mag;
-
+		firingDir = VectorNormalise(firingDir);
+		
 		sf::Vector2f firingVel = firingDir * firingSpd;
 		firingPos = playerPos;
 		
 		
 		
-		
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::F))
+		{
+			grenadeSpr.setPosition(firingPos);
+			grenadeVel = firingVel;
+		}
 		
 		float pipTime = 0;
 		for (int i = 0; i < pipSprites.size(); ++i)
 		{
 			
 			pipTime += 0.1f;
-			pipPos = (pipGrav * (pipTime * pipTime) / 2.0f + firingVel * pipTime + firingPos);
+			pipPos = (gravity * (pipTime * pipTime) / 2.0f + firingVel * pipTime + firingPos);
 			pipSprites[i].setPosition(pipPos);
 		}
 		
+		grenadeVel +=  gravity * frameTime.asSeconds();
+		grenadeSpr.setPosition(grenadeSpr.getPosition() + grenadeVel * frameTime.asSeconds());
+
+		/// Practical Task 5 - Reflection //////////////////////////////
+		
+		sf::FloatRect grenadeAABB = grenadeSpr.getGlobalBounds();
+
+		if (floorAABB.intersects(grenadeAABB))
+		{
+			sf::Vector2f depth = CollisionDepth(grenadeAABB, floorAABB);
+			sf::Vector2f absDepth = sf::Vector2f(abs(depth.x), abs(depth.y));
+			sf::Vector2f normal;
+
+			if (absDepth.x < absDepth.y)
+			{
+				sf::Vector2f grenadePos = grenadeSpr.getPosition();
+				grenadePos.x += depth.x;
+				grenadeSpr.setPosition(grenadePos);
+
+				if (depth.x > 0)
+				{
+					normal = sf::Vector2f(-1, 0);
+				}
+				else
+				{
+					normal = sf::Vector2f(1, 0);
+				}
+			} else
+			{
+				sf::Vector2f grenadePos = grenadeSpr.getPosition();
+				grenadePos.y += depth.y;
+				grenadeSpr.setPosition(grenadePos);
+
+				if (depth.y > 0)
+				{
+					normal = sf::Vector2f(0, -1);
+				}
+				else
+				{
+					normal = sf::Vector2f(0, 1);
+				}
+			}
+
+			grenadeVel = grenadeVel - 2.0f * normal * (VectorDot(grenadeVel, normal));
+
+		}
+
 		// Clears
 		window.clear();
 		
@@ -427,6 +482,7 @@ int main()
 		window.draw(floorSpr);
 		window.draw(playerSpr);
 		window.draw(popupSpr);
+		window.draw(grenadeSpr);
 		
 
 		for (int i = 0; i < pipSprites.size(); ++i) {
